@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json as _json
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 try:
-    from toon import decode, DecodeOptions, encode, EncodeOptions  # type: ignore
+    from toon import decode, encode, DecodeOptions, EncodeOptions  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
     decode = None  # type: ignore
     encode = None  # type: ignore
@@ -17,7 +16,8 @@ from toon_experiment.schemas.summary import Summary, summary_template
 TOON_TEMPLATE: Dict[str, Any] = summary_template()
 
 
-def json_to_toon(obj: Dict[str, Any]) -> str:
+def dumps(obj: Dict[str, Any]) -> str:
+    """Encode dict to TOON format string."""
     if encode is None:
         raise FormatError("python-toon is not installed; run `pip install python-toon`")
     try:
@@ -26,7 +26,8 @@ def json_to_toon(obj: Dict[str, Any]) -> str:
         raise FormatError(f"TOON encoding failed: {exc}")
 
 
-def toon_to_json(text: str) -> Dict[str, Any]:
+def loads(text: str) -> Dict[str, Any]:
+    """Decode TOON format string to dict."""
     if decode is None:
         raise FormatError("python-toon is not installed; run `pip install python-toon`")
     try:
@@ -36,6 +37,7 @@ def toon_to_json(text: str) -> Dict[str, Any]:
 
 
 def validate(obj: Dict[str, Any]) -> ValidationResult:
+    """Validate dict against Summary schema."""
     errors: list[str] = []
     try:
         Summary.model_validate(obj)

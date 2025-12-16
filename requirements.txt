@@ -2,6 +2,7 @@ langchain>=0.2.0
 langchain-community>=0.2.0
 langchain-openai>=0.1.7
 pydantic>=2.7
+pydantic-settings>=2.3
 pyyaml>=6.0.1
 orjson>=3.10
 tqdm>=4.66
@@ -12,4 +13,4 @@ jsonschema>=4.22
 rich>=13.7
 python-dotenv>=1.0
 datasets>=2.19
-python-toon
+python-toon>=0.1.3

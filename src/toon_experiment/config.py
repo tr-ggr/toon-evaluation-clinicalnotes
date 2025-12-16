@@ -4,33 +4,45 @@ from pathlib import Path
 from typing import Literal, Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 
 # Load .env early for CLI usage
 load_dotenv(override=False)
 
 
 OutputFormat = Literal["json", "yaml", "toon"]
-ModelChoice = Literal["deepseek-r1-turbo", "openai/gpt-4-turbo", "anthropic/claude-3.5-sonnet"]
+ModelChoice = Literal["allenai/olmo-3-32b-think:free", "tngtech/deepseek-r1t2-chimera:free"]
 
 
 class Settings(BaseSettings):
     data_dir: Path = Field(default=Path("data"))
     outputs_dir: Path = Field(default=Path("outputs"))
     format: OutputFormat = Field(default="json")
-    model: ModelChoice = Field(default="deepseek-chimera")
+    model: ModelChoice = Field(default="tngtech/deepseek-r1t2-chimera:free")
     max_retries: int = Field(default=3)
     temperature: float = Field(default=0.2)
     top_p: float = Field(default=0.9)
     seed: Optional[int] = Field(default=None)
-    openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    huggingface_token: Optional[str] = Field(default=None, env="HUGGINGFACEHUB_API_TOKEN")
+    openai_api_key: Optional[str] = Field(default=None)
+    huggingface_token: Optional[str] = Field(default=None)
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-    @validator("max_retries")
+    @field_validator("seed", mode="before")
+    @classmethod
+    def _seed_optional(cls, v: object) -> Optional[int]:
+        """Convert empty string to None; parse non-empty strings as int."""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        if isinstance(v, str):
+            return int(v)
+        return v  # type: ignore[return-value]
+
+    @field_validator("max_retries")
+    @classmethod
     def _max_retries_positive(cls, v: int) -> int:
         if v < 0:
             raise ValueError("max_retries must be non-negative")

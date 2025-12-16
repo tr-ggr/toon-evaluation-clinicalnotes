@@ -12,7 +12,7 @@ from toon_experiment.pipeline.run import parse_dataset
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run parsing pipeline for ACN notes")
     parser.add_argument("--format", choices=["json", "yaml", "toon"], default="json")
-    parser.add_argument("--model", choices=["deepseek-r1-turbo", "openai/gpt-4-turbo", "anthropic/claude-3.5-sonnet"], default="deepseek-r1-turbo")
+    parser.add_argument("--model", choices=["allenai/olmo-3-32b-think:free", "tngtech/deepseek-r1t2-chimera:free"], default="tngtech/deepseek-r1t2-chimera:free")
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--max-retries", type=int, default=None)
@@ -35,6 +35,18 @@ def main() -> None:
         top_p=args.top_p or Settings().top_p,
         seed=args.seed,
     )
+    print("=" * 60)
+    print("Pipeline Settings:")
+    print(f"  Format: {settings.format}")
+    print(f"  Model: {settings.model}")
+    print(f"  Data Dir: {settings.data_dir}")
+    print(f"  Outputs Dir: {settings.outputs_dir}")
+    print(f"  Max Retries: {settings.max_retries}")
+    print(f"  Temperature: {settings.temperature}")
+    print(f"  Top P: {settings.top_p}")
+    print(f"  Seed: {settings.seed}")
+    print(f"  Limit: {args.limit}")
+    print("=" * 60)
     samples = list(iter_acn_hf(limit=args.limit))
     results = parse_dataset(samples, settings)
     succeeded = sum(1 for r in results if r.success)

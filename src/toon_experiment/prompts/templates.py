@@ -18,22 +18,23 @@ def format_template(target_format: str) -> str:
     if target_format == "yaml":
         return yaml_format.dumps(tmpl_dict)
     if target_format == "toon":
-        # For TOON we show JSON template to reduce prompt size; generator will output TOON.
-        return json_format.dumps(tmpl_dict)
+        return toon_format.dumps(tmpl_dict)
     raise ValueError(f"Unknown format: {target_format}")
 
 
 def build_prompt(target_format: str) -> str:
     tmpl = format_template(target_format)
     format_label = target_format.upper()
-    return dedent(
+    # Escape braces in template to avoid format string conflicts
+    tmpl_escaped = tmpl.replace("{", "{{").replace("}", "}}")
+    prompt_template = dedent(
         f"""
         {PROMPT_PREAMBLE.strip()}
 
         TARGET FORMAT: {format_label}
         SCHEMA TEMPLATE:
-        ```
-        {tmpl}
+        ```{target_format}
+        {tmpl_escaped}
         ```
 
         RULES:
@@ -50,3 +51,5 @@ def build_prompt(target_format: str) -> str:
         RESPONSE: Only the {format_label} structure.
         """
     ).strip()
+    print(f"Built prompt template:\n{prompt_template}\n")
+    return prompt_template
