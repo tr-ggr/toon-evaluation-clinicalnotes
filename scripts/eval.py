@@ -11,7 +11,7 @@ from toon_experiment.eval.run_eval import evaluate
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate parsed outputs against ACN summaries")
     parser.add_argument("--format", choices=["json", "yaml", "toon"], default="json")
-    parser.add_argument("--model", choices=["deepseek-r1-turbo", "openai/gpt-4-turbo", "anthropic/claude-3.5-sonnet"], default="deepseek-r1-turbo")
+    parser.add_argument("--model", choices=["gemini-2.5-pro"], default="gemini-2.5-pro")
     parser.add_argument("--outputs-dir", type=Path, default=Path("outputs"))
     return parser.parse_args()
 

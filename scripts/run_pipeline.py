@@ -12,7 +12,7 @@ from toon_experiment.pipeline.run import parse_dataset
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run parsing pipeline for ACN notes")
     parser.add_argument("--format", choices=["json", "yaml", "toon"], default="json")
-    parser.add_argument("--model", choices=["allenai/olmo-3-32b-think:free", "tngtech/deepseek-r1t2-chimera:free"], default="tngtech/deepseek-r1t2-chimera:free")
+    parser.add_argument("--model", choices=["gemini-2.5-pro"], default="gemini-2.5-pro")
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--max-retries", type=int, default=None)

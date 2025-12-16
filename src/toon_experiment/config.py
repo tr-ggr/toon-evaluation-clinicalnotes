@@ -12,19 +12,19 @@ load_dotenv(override=False)
 
 
 OutputFormat = Literal["json", "yaml", "toon"]
-ModelChoice = Literal["allenai/olmo-3-32b-think:free", "tngtech/deepseek-r1t2-chimera:free"]
+ModelChoice = Literal["gemini-2.5-pro"]
 
 
 class Settings(BaseSettings):
     data_dir: Path = Field(default=Path("data"))
     outputs_dir: Path = Field(default=Path("outputs"))
     format: OutputFormat = Field(default="json")
-    model: ModelChoice = Field(default="tngtech/deepseek-r1t2-chimera:free")
+    model: ModelChoice = Field(default="gemini-2.5-pro")
     max_retries: int = Field(default=3)
     temperature: float = Field(default=0.2)
     top_p: float = Field(default=0.9)
     seed: Optional[int] = Field(default=None)
-    openai_api_key: Optional[str] = Field(default=None)
+    google_api_key: Optional[str] = Field(default=None)
     huggingface_token: Optional[str] = Field(default=None)
 
     class Config:

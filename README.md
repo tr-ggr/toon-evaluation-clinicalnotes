@@ -9,10 +9,10 @@ MVP implementation with parsing, validation/retry loop, and evaluation. Configur
 ## Quickstart
 
 1. Install deps (recommend venv): `pip install -r requirements.txt`
-2. Copy `.env.example` to `.env` and add your OpenRouter API key (`OPENAI_API_KEY=sk-or-v1-...`). `python-dotenv` auto-loads `.env` via `config.py`.
+2. Copy `.env.example` to `.env` and add your Google Gemini API key (`GOOGLE_API_KEY=...`). `python-dotenv` auto-loads `.env` via `config.py`.
 3. Provide ACN dataset `full_note` + `summary` JSON lines under `data/*.jsonl`, or use Hugging Face: `iter_acn_hf()` loads `AGBonnet/augmented-clinical-notes`.
-4. Run parsing for one format: `python scripts/run_pipeline.py --format json --model deepseek-r1-turbo --limit 10`
-5. Run evaluation: `python scripts/eval.py --format json --model deepseek-r1-turbo`
+4. Run parsing for one format: `python scripts/run_pipeline.py --format json --model gemini-2.5-pro-exp --limit 10`
+5. Run evaluation: `python scripts/eval.py --format json --model gemini-2.5-pro-exp`
 
 ## Layout
 

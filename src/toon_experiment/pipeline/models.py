@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 from typing import Optional
 
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from toon_experiment.config import ModelChoice
@@ -14,19 +14,19 @@ from toon_experiment.config import ModelChoice
 def get_chat_model(
     model_choice: ModelChoice, temperature: float, top_p: float, seed: Optional[int]
 ) -> BaseChatModel:
-    """Get ChatOpenAI client configured for OpenRouter endpoint.
+    """Get Gemini chat model client.
 
-    Expects OPENAI_API_KEY to be set (OpenRouter API key).
-    Supported models: deepseek-r1-turbo, openai/gpt-4-turbo, anthropic/claude-3.5-sonnet
+    Expects GOOGLE_API_KEY to be set.
+    Supported models: gemini-2.5-pro
     """
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not set (use OpenRouter API key)")
+        raise RuntimeError("GOOGLE_API_KEY not set")
 
-    return ChatOpenAI(
+    return ChatGoogleGenerativeAI(
         model=model_choice,
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
+        google_api_key=api_key,
         temperature=temperature,
         top_p=top_p,
+        seed=seed,
     )
