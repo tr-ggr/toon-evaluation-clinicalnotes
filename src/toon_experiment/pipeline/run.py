@@ -12,6 +12,8 @@ from toon_experiment.io.datasets import ACNSample
 from toon_experiment.pipeline.models import get_chat_model
 from toon_experiment.prompts.templates import build_prompt
 
+from toon import encode
+
 FORMAT_MODULES = {
     "json": json_format,
     "yaml": yaml_format,
@@ -99,7 +101,7 @@ def parse_sample(sample: ACNSample, sample_idx: int, settings: Settings) -> Pars
             
             # Debug: show first 200 chars of response on failures
             if attempts > 1:
-                preview = content[:200].replace('\n', '\\n')
+                preview = content.replace('\n', '\\n')
                 print(f"[Sample {sample_idx:05d}] Response preview: {preview}...")
             
             candidate = _parse_text(content, fmt)
@@ -110,13 +112,48 @@ def parse_sample(sample: ACNSample, sample_idx: int, settings: Settings) -> Pars
                 success = True
                 with raw_path.open("w", encoding="utf-8") as f:
                     f.write(content)
-                output_obj = dict(candidate)
+                
+                # Create output JSON with required fields
+                output_obj = {
+                    "output_summary": content,
+                    "ground_truth_summary": "",
+                    "format": fmt
+                }
+                # Normalize ground truth: if it's a JSON/YAML string, parse it first
+                gt_obj: object = sample.summary
+                if isinstance(gt_obj, str):
+                    parsed_obj = None
+                    try:
+                        parsed_obj = json.loads(gt_obj)
+                    except Exception:
+                        try:
+                            parsed_obj = yaml_format.loads(gt_obj)
+                        except Exception:
+                            parsed_obj = None
+                    if parsed_obj is not None:
+                        gt_obj = parsed_obj
                 try:
-                    output_obj["ground_truth_summary"] = fmt_module.dumps(sample.summary)
-                except Exception:
-                    output_obj["ground_truth_summary"] = sample.summary
+                    if isinstance(gt_obj, (dict, list)):
+                        output_obj["ground_truth_summary"] = fmt_module.dumps(gt_obj)
+                    else:
+                        output_obj["ground_truth_summary"] = str(gt_obj)
+                except Exception as e:
+                    # Fallback to JSON if format-specific encoding fails
+                    print(f"Failed to dump ground truth in {fmt}: {e}")
+                    try:
+                        output_obj["ground_truth_summary"] = json.dumps(gt_obj, ensure_ascii=False, indent=2)
+                    except Exception:
+                        output_obj["ground_truth_summary"] = str(gt_obj)
+
+                
                 with parsed_path.open("w", encoding="utf-8") as f:
-                    json.dump(output_obj, f, ensure_ascii=False, indent=2)
+                    # Write output_obj but handle the ground_truth_summary specially to avoid double-escaping
+                    output_json = {
+                        "output_summary": output_obj["output_summary"],
+                        "ground_truth_summary": output_obj["ground_truth_summary"],
+                        "format": output_obj["format"]
+                    }
+                    f.write(json.dumps(output_json, ensure_ascii=False, indent=2))
                 print(f"[Sample {sample_idx:05d}] SUCCESS on attempt {attempts} ({attempt_time:.2f}s)")
                 break
             else:

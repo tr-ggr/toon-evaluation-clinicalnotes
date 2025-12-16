@@ -10,6 +10,10 @@ PROMPT_PREAMBLE = """
 You are a clinical information extraction system. Given a clinical note, produce a structured summary strictly following the provided target format and schema. Do not include any explanatory text or prose outside the serialized structure. If information is missing, leave the field null/empty but preserve the field.
 """
 
+TOON_FORMAT_INSTRUCTIONS = """
+Respond using TOON format (Token-Oriented Object Notation). Use key: value syntax, indentation for nesting, and tabular format [N,]{{fields}}: for uniform arrays. Array lengths are marked with [#N]. Ensure your response matches these counts.
+"""
+
 
 def format_template(target_format: str) -> str:
     tmpl_dict: Dict[str, object] = summary_template()
@@ -27,9 +31,15 @@ def build_prompt(target_format: str) -> str:
     format_label = target_format.upper()
     # Escape braces in template to avoid format string conflicts
     tmpl_escaped = tmpl.replace("{", "{{").replace("}", "}}")
+    
+    # Add TOON-specific instructions
+    format_instructions = ""
+    if target_format == "toon":
+        format_instructions = f"\n\n{TOON_FORMAT_INSTRUCTIONS.strip()}"
+    
     prompt_template = dedent(
         f"""
-        {PROMPT_PREAMBLE.strip()}
+        {PROMPT_PREAMBLE.strip()}{format_instructions}
 
         TARGET FORMAT: {format_label}
         SCHEMA TEMPLATE:
@@ -48,7 +58,7 @@ def build_prompt(target_format: str) -> str:
         {{clinical_note}}
         ```
 
-        RESPONSE: Only the {format_label} structure.
+        RESPONSE: Only the {format_label} structure wrapped in a ```{target_format} code block.
         """
     ).strip()
     print(f"Built prompt template:\n{prompt_template}\n")

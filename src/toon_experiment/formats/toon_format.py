@@ -17,11 +17,11 @@ TOON_TEMPLATE: Dict[str, Any] = summary_template()
 
 
 def dumps(obj: Dict[str, Any]) -> str:
-    """Encode dict to TOON format string."""
+    """Encode dict to TOON format string with length markers."""
     if encode is None:
         raise FormatError("python-toon is not installed; run `pip install python-toon`")
     try:
-        return encode(obj, EncodeOptions(indent=2))  # type: ignore[operator]
+        return encode(obj, EncodeOptions(indent=2, lengthMarker="#"))  # type: ignore[operator]
     except Exception as exc:  # pragma: no cover - defensive
         raise FormatError(f"TOON encoding failed: {exc}")
 
