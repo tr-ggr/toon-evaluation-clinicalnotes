@@ -100,6 +100,94 @@ def _extract_ground_truth(obj: dict) -> dict:
         return {}
 
 
+def _calculate_compression(output_objs: List[dict], limit: int = 10) -> Dict[str, Any]:
+    """Calculate token compression metrics (output_summary size / full_note size).
+
+    For Avg Input/Sample, load the ACN dataset and compute the average input
+    characters using only the first ``limit`` samples (default 10), independent
+    of how many output objects are available.
+
+    Args:
+        output_objs: List of parsed output objects with output_summary field.
+        limit: Number of ACN samples to consider when computing input averages.
+
+    Returns:
+        Dict with compression ratios per sample and averages.
+    """
+    try:
+        from toon_experiment.io.datasets import iter_acn_hf
+    except ImportError:
+        # If dataset not available, return empty compression metrics
+        return {
+            "total_input_chars": 0,
+            "total_output_chars": 0,
+            "average_input_chars": 0,
+            "average_output_chars": 0,
+            "compression_ratio": 0.0,
+            "per_sample": [],
+            "average_compression": 0.0,
+        }
+    
+    # Load the first `limit` samples from ACN dataset for consistent indexing
+    all_samples = list(iter_acn_hf(limit=limit))
+
+    # Compute dataset-driven Avg Input/Sample strictly from the first `limit` notes
+    if all_samples:
+        dataset_avg_input = mean(len(s.full_note) for s in all_samples)
+        dataset_total_input = sum(len(s.full_note) for s in all_samples)
+    else:
+        dataset_avg_input = 0
+        dataset_total_input = 0
+    
+    compression_ratios = []
+    total_input = 0
+    total_output = 0
+    per_sample_data = []
+    
+    for i, obj in enumerate(output_objs):
+        if "output_summary" not in obj or i >= len(all_samples):
+            continue
+        
+        sample = all_samples[i]
+        
+        # Get input size from original full_note
+        input_len = len(sample.full_note)
+        total_input += input_len
+        
+        # Get output size from output_summary (stripped of markdown)
+        output_text = _strip_markdown_code_block(obj["output_summary"])
+        output_len = len(output_text)
+        total_output += output_len
+        
+        # Calculate compression ratio for this sample
+        compression = output_len / input_len if input_len > 0 else 0.0
+        compression_ratios.append(compression)
+        per_sample_data.append({
+            "sample": i,
+            "input_chars": input_len,
+            "output_chars": output_len,
+            "compression": compression,
+        })
+    
+    avg_compression = mean(compression_ratios) if compression_ratios else 0.0
+    num_samples = len(per_sample_data)
+    # For reporting, Avg Input/Sample is dataset-based; Avg Output/Sample is
+    # computed from available outputs aligned to those samples.
+    avg_input = dataset_avg_input
+    avg_output = total_output / num_samples if num_samples > 0 else 0
+    
+    return {
+        # Keep totals as observed from paired samples for compression math
+        "total_input_chars": total_input,
+        "total_output_chars": total_output,
+        "average_input_chars": avg_input,
+        "average_output_chars": avg_output,
+        "compression_ratio": total_output / total_input if total_input > 0 else 0.0,
+        "per_sample": per_sample_data,
+        "average_compression": avg_compression,
+    }
+
+
 def evaluate(outputs_dir: Path) -> Dict[str, Any]:
     """Evaluate parsed outputs against ground truth summaries.
 
@@ -108,7 +196,7 @@ def evaluate(outputs_dir: Path) -> Dict[str, Any]:
 
     Returns:
         Dict containing all evaluation metrics including field-level, entity-level,
-        coverage, and format comparison metrics.
+        coverage, format comparison metrics, and compression metrics.
     """
     output_objs = _load_preds(outputs_dir)
     preds = [_extract_prediction(obj) for obj in output_objs]
@@ -169,6 +257,9 @@ def evaluate(outputs_dir: Path) -> Dict[str, Any]:
     run_summary_path = outputs_dir / "run_summary.txt"
     format_metrics = parse_run_summary(run_summary_path)
     
+    # Calculate compression metrics
+    compression_metrics = _calculate_compression(output_objs)
+    
     return {
         # Field-level metrics
         "field_precision": mean(p_vals) if p_vals else 0.0,
@@ -184,4 +275,7 @@ def evaluate(outputs_dir: Path) -> Dict[str, Any]:
         
         # Format comparison metrics
         "format_metrics": format_metrics,
+        
+        # Compression metrics
+        "compression": compression_metrics,
     }
